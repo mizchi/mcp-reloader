@@ -3,14 +3,21 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { ListToolsRequestSchema, CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import chokidar from "chokidar";
-import { readdir, readFile } from "fs/promises";
-import { join, dirname, relative } from "path";
+import { readdir } from "fs/promises";
+import { join, dirname } from "path";
 import { fileURLToPath } from "url";
-import { minimatch } from "minimatch";
+import type { Tool } from './types.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 class HotReloadMCPServer {
+  private server: Server;
+  private tools: Map<string, Tool>;
+  private toolsDir: string;
+  private watcher: chokidar.FSWatcher | null;
+  private isDirty: boolean;
+  private includePatterns: string[];
+
   constructor() {
     this.server = new Server({
       name: "hot-reload-mcp",
@@ -22,7 +29,7 @@ class HotReloadMCPServer {
     });
 
     this.tools = new Map();
-    this.toolsDir = join(__dirname, "tools");
+    this.toolsDir = join(__dirname, "..", "tools");
     this.watcher = null;
     this.isDirty = false;
     this.includePatterns = [];
@@ -35,13 +42,13 @@ class HotReloadMCPServer {
     }
   }
 
-  async loadTools() {
+  async loadTools(): Promise<void> {
     try {
       const files = await readdir(this.toolsDir);
-      const newTools = new Map();
+      const newTools = new Map<string, Tool>();
 
       for (const file of files) {
-        if (file.endsWith(".js")) {
+        if (file.endsWith(".js") || file.endsWith(".mjs")) {
           const toolPath = join(this.toolsDir, file);
           try {
             const toolUrl = `file://${toolPath}?t=${Date.now()}`;
@@ -67,7 +74,7 @@ class HotReloadMCPServer {
 
       if (added.length > 0 || removed.length > 0 || changed.length > 0) {
         // Only send notification if server is connected
-        if (this.server.transport) {
+        if ((this.server as any).transport) {
           await this.server.notification({
             method: "tools/list_changed"
           });
@@ -79,7 +86,7 @@ class HotReloadMCPServer {
     }
   }
 
-  setupHandlers() {
+  setupHandlers(): void {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       // Check if dirty and need restart
       if (this.isDirty) {
@@ -123,7 +130,7 @@ class HotReloadMCPServer {
         return {
           content: [{
             type: "text",
-            text: `Error: ${error.message}`
+            text: `Error: ${error instanceof Error ? error.message : String(error)}`
           }],
           isError: true
         };
@@ -131,7 +138,7 @@ class HotReloadMCPServer {
     });
   }
 
-  async startWatching() {
+  async startWatching(): Promise<void> {
     // Watch tools directory
     this.watcher = chokidar.watch(this.toolsDir, {
       persistent: true,
@@ -166,7 +173,7 @@ class HotReloadMCPServer {
         this.isDirty = true;
         
         // Send notification that restart is required
-        if (this.server.transport) {
+        if ((this.server as any).transport) {
           this.server.notification({
             method: "server/dirty",
             params: {
@@ -182,7 +189,7 @@ class HotReloadMCPServer {
     }
   }
 
-  async start() {
+  async start(): Promise<void> {
     await this.loadTools();
     this.setupHandlers();
     await this.startWatching();

@@ -1,14 +1,23 @@
 #!/usr/bin/env node
-import { spawn } from "child_process";
+import { spawn, ChildProcess } from "child_process";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import chokidar from "chokidar";
 import { parseArgs, buildCommand } from "./parse-args.js";
+import type { WrapperOptions } from './types.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 class ServerWrapper {
-  constructor(options) {
+  private serverProcess: ChildProcess | null;
+  private isRestarting: boolean;
+  private includePatterns: string[];
+  private command: string;
+  private commandArgs: string[];
+  private isDirty: boolean;
+  private watchers: chokidar.FSWatcher[];
+
+  constructor(options: WrapperOptions) {
     this.serverProcess = null;
     this.isRestarting = false;
     this.includePatterns = options.includePatterns || [];
@@ -18,7 +27,7 @@ class ServerWrapper {
     this.watchers = [];
   }
 
-  start() {
+  start(): void {
     console.error("[Wrapper] Starting MCP server...");
     console.error(`[Wrapper] Command: ${this.command} ${this.commandArgs.join(' ')}`);
     
@@ -38,7 +47,7 @@ class ServerWrapper {
     });
 
     // Monitor stderr for dirty notifications
-    this.serverProcess.stderr.on("data", (data) => {
+    this.serverProcess.stderr?.on("data", (data: Buffer) => {
       const message = data.toString();
       process.stderr.write(message);
       
@@ -63,7 +72,7 @@ class ServerWrapper {
     });
   }
 
-  startWatching() {
+  startWatching(): void {
     // Set up file watchers for include patterns
     if (this.includePatterns.length > 0) {
       console.error("[Wrapper] Setting up file watchers for include patterns");
@@ -86,7 +95,7 @@ class ServerWrapper {
     }
   }
 
-  async restart() {
+  async restart(): Promise<void> {
     if (this.isRestarting || !this.isDirty) return;
     
     this.isRestarting = true;
@@ -98,11 +107,11 @@ class ServerWrapper {
       this.serverProcess.kill("SIGTERM");
       
       // Wait for process to exit
-      await new Promise((resolve) => {
-        this.serverProcess.on("exit", resolve);
+      await new Promise<void>((resolve) => {
+        this.serverProcess!.on("exit", resolve);
         // Force kill after timeout
         setTimeout(() => {
-          if (this.serverProcess.exitCode === null) {
+          if (this.serverProcess && this.serverProcess.exitCode === null) {
             this.serverProcess.kill("SIGKILL");
           }
         }, 5000);
@@ -114,7 +123,7 @@ class ServerWrapper {
     this.start();
   }
 
-  async stop() {
+  async stop(): Promise<void> {
     // Close all watchers
     for (const watcher of this.watchers) {
       await watcher.close();
@@ -126,6 +135,9 @@ class ServerWrapper {
     }
   }
 }
+
+// Global wrapper instance for signal handlers
+let wrapper: ServerWrapper | null = null;
 
 // Handle signals
 process.on("SIGINT", async () => {
@@ -150,7 +162,7 @@ const parsedArgs = parseArgs(args);
 const { command, args: commandArgs } = buildCommand(parsedArgs);
 
 // Start the wrapper
-const wrapper = new ServerWrapper({
+wrapper = new ServerWrapper({
   includePatterns: parsedArgs.includePatterns,
   command,
   commandArgs

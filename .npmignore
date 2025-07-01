@@ -1,0 +1,15 @@
+src/
+tests/
+.github/
+*.ts
+!*.d.ts
+tsconfig.json
+.gitignore
+*.sh
+test-*.js
+quick-test.js
+simple-test.js
+verify-hot-reload.js
+HOT_RELOAD_TEST.md
+COMPARISON.md
+config/

@@ -1,5 +1,7 @@
-export function parseArgs(argv) {
-  const args = {
+import type { ParsedArgs } from './types.js';
+
+export function parseArgs(argv: string[]): ParsedArgs {
+  const args: ParsedArgs = {
     includePatterns: [],
     command: null,
     commandArgs: [],
@@ -38,7 +40,7 @@ export function parseArgs(argv) {
   return args;
 }
 
-export function buildCommand(parsedArgs) {
+export function buildCommand(parsedArgs: ParsedArgs): { command: string; args: string[] } {
   if (parsedArgs.command) {
     return {
       command: parsedArgs.command,
@@ -49,6 +51,6 @@ export function buildCommand(parsedArgs) {
   // Default to running the local server
   return {
     command: "node",
-    args: ["src/server.js"]
+    args: ["dist/server.js"]
   };
 }

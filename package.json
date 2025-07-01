@@ -1,18 +1,53 @@
 {
-  "name": "mcp-hot-reload",
-  "version": "1.0.0",
-  "description": "MCP server with hot reload capability",
+  "name": "mcp-reloader",
+  "version": "0.1.0",
+  "description": "Hot-reload server for Model Context Protocol (MCP) with dynamic tool loading",
   "type": "module",
-  "scripts": {
-    "dev": "node --watch src/server.js",
-    "dev:wrapper": "node src/wrapper.js",
-    "dev:include": "MCP_HOT_RELOAD_INCLUDE='config/**/*.json,src/**/*.yaml' node src/wrapper.js",
-    "test": "node tests/test-client.js"
+  "bin": {
+    "mcp-reloader": "./dist/cli.js"
   },
+  "main": "./dist/server.js",
+  "types": "./dist/server.d.ts",
+  "files": [
+    "dist",
+    "tools"
+  ],
+  "scripts": {
+    "build": "tsdown src --outdir dist",
+    "dev": "tsx watch src/server.ts",
+    "dev:wrapper": "tsx src/wrapper.ts",
+    "dev:include": "MCP_HOT_RELOAD_INCLUDE='config/**/*.json,src/**/*.yaml' tsx src/wrapper.ts",
+    "test": "node tests/test-client.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "hot-reload",
+    "development",
+    "lsp",
+    "language-server"
+  ],
+  "author": "mizchi",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mizchi/mcp-reloader.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mizchi/mcp-reloader/issues"
+  },
+  "homepage": "https://github.com/mizchi/mcp-reloader#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
-    "chokidar": "^4.0.3",
-    "glob": "^11.0.3",
-    "minimatch": "^10.0.3"
+    "chokidar": "^4.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.8",
+    "tsdown": "^0.12.9",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
   }
 }

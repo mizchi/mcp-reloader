@@ -1,9 +1,9 @@
 {
   "mcpServers": {
     "hot-reload": {
-      "command": "node",
+      "command": "npx",
       "args": [
-        "src/wrapper.js",
+        "mcp-reloader",
         "--include", "config/**/*.json",
         "--include", "src/lib/**/*.js"
       ],
@@ -12,9 +12,9 @@
       }
     },
     "hot-reload-custom": {
-      "command": "node",
+      "command": "npx",
       "args": [
-        "src/wrapper.js",
+        "mcp-reloader",
         "--include", "**/*.yaml",
         "--",
         "python",
@@ -23,9 +23,9 @@
       ]
     },
     "hot-reload-complex": {
-      "command": "node",
+      "command": "npx",
       "args": [
-        "src/wrapper.js",
+        "mcp-reloader",
         "--include", "config/**/*.{json,yaml}",
         "--include", "src/**/*.ts",
         "--",

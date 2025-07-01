@@ -19,9 +19,11 @@ MCP Reloader solves the common development pain point where MCP clients need to 
 ## Installation
 
 ```bash
-git clone https://github.com/mizchi/mcp-reloader.git
-cd mcp-reloader
-npm install
+# Global installation
+npm install -g mcp-reloader
+
+# Or use directly with npx (recommended)
+npx mcp-reloader --help
 ```
 
 ## Usage
@@ -29,11 +31,11 @@ npm install
 ### Basic Server Start
 
 ```bash
-# Start with default MCP server
-npm run dev
+# Start default MCP server with hot-reload
+npx mcp-reloader
 
-# Start with wrapper (supports auto-restart)
-npm run dev:wrapper
+# Or if installed globally
+mcp-reloader
 ```
 
 ### Using Include Patterns
@@ -42,10 +44,10 @@ Watch additional files and restart the process when they change:
 
 ```bash
 # Watch configuration files
-node src/wrapper.js --include "config/**/*.json" --include "src/lib/**/*.js"
+npx mcp-reloader --include "config/**/*.json" --include "src/lib/**/*.js"
 
 # Or use environment variable
-MCP_HOT_RELOAD_INCLUDE='config/**/*.json,src/lib/**/*.js' node src/wrapper.js
+MCP_HOT_RELOAD_INCLUDE='config/**/*.json,src/lib/**/*.js' npx mcp-reloader
 ```
 
 ### Wrapping Custom LSP Servers
@@ -54,13 +56,13 @@ Wrap any LSP server with hot-reload capabilities:
 
 ```bash
 # Wrap a Python LSP server
-node src/wrapper.js --include "**/*.yaml" -- python my-lsp-server.py --port 3000
+npx mcp-reloader --include "**/*.yaml" -- python my-lsp-server.py --port 3000
 
 # Wrap a Node.js server with complex arguments
-node src/wrapper.js --include "**/*.ts" -- node --experimental-specifier-resolution=node ./dist/server.js --config ./config.json
+npx mcp-reloader --include "**/*.ts" -- node --experimental-specifier-resolution=node ./dist/server.js --config ./config.json
 
 # Legacy cmd: format (still supported)
-node src/wrapper.js cmd:python server.py --port 3000
+npx mcp-reloader cmd:python server.py --port 3000
 ```
 
 ## MCP Client Configuration
@@ -71,17 +73,17 @@ Add to your `.mcp.json` or `claude_desktop_config.json`:
 {
   "mcpServers": {
     "hot-reload": {
-      "command": "node",
+      "command": "npx",
       "args": [
-        "/path/to/mcp-reloader/src/wrapper.js",
+        "mcp-reloader",
         "--include", "config/**/*.json",
         "--include", "src/lib/**/*.js"
       ]
     },
     "custom-lsp": {
-      "command": "node",
+      "command": "npx",
       "args": [
-        "/path/to/mcp-reloader/src/wrapper.js",
+        "mcp-reloader",
         "--include", "**/*.yaml",
         "--",
         "python",
@@ -129,10 +131,10 @@ Specify glob patterns for files to watch. When matched files change, the entire 
 
 ```bash
 # Single pattern
-node src/wrapper.js --include "config.json"
+npx mcp-reloader --include "config.json"
 
 # Multiple patterns
-node src/wrapper.js --include "**/*.yaml" --include "lib/**/*.js"
+npx mcp-reloader --include "**/*.yaml" --include "lib/**/*.js"
 ```
 
 ### -- separator
@@ -141,13 +143,13 @@ Everything after `--` is treated as the command and its arguments. This makes it
 
 ```bash
 # Simple command
-node src/wrapper.js -- python server.py --port 3000
+npx mcp-reloader -- python server.py --port 3000
 
 # Complex Node.js arguments
-node src/wrapper.js --include "**/*.ts" -- node --experimental-specifier-resolution=node ./dist/server.js --config ./config.json
+npx mcp-reloader --include "**/*.ts" -- node --experimental-specifier-resolution=node ./dist/server.js --config ./config.json
 
 # Arguments with spaces and special characters
-node src/wrapper.js -- python script.py --message "Hello World!" --path "/path with spaces/"
+npx mcp-reloader -- python script.py --message "Hello World!" --path "/path with spaces/"
 ```
 
 ## How It Works
@@ -211,9 +213,19 @@ node src/wrapper.js -- python script.py --message "Hello World!" --path "/path w
 - Entire server process restarts
 - All tools are reloaded with new configuration
 
-## Development
+## Local Development
+
+For developing mcp-reloader itself:
 
 ```bash
+# Clone and install
+git clone https://github.com/mizchi/mcp-reloader.git
+cd mcp-reloader
+npm install
+
+# Build TypeScript
+npm run build
+
 # Run tests
 npm test
 
