@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import chokidar from "chokidar";
 import { readdir } from "fs/promises";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 
 //#region src/server.ts
 const __dirname = dirname(fileURLToPath(import.meta.url));

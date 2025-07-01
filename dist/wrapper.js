@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { buildCommand, parseArgs } from "./parse-args-CR4sYHDY.js";
-import { spawn } from "child_process";
 import chokidar from "chokidar";
+import { spawn } from "child_process";
 
 //#region src/wrapper.ts
 var ServerWrapper = class {

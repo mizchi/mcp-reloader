@@ -3,37 +3,20 @@
     "hot-reload": {
       "command": "npx",
       "args": [
-        "mcp-reloader",
-        "--include", "config/**/*.json",
-        "--include", "src/lib/**/*.js"
+        "mcp-reloader"
       ],
       "env": {
         "NODE_ENV": "development"
       }
     },
-    "hot-reload-custom": {
+    "echo-with-reload": {
       "command": "npx",
       "args": [
         "mcp-reloader",
-        "--include", "**/*.yaml",
-        "--",
-        "python",
-        "my-lsp-server.py",
-        "--port", "3000"
-      ]
-    },
-    "hot-reload-complex": {
-      "command": "npx",
-      "args": [
-        "mcp-reloader",
-        "--include", "config/**/*.{json,yaml}",
-        "--include", "src/**/*.ts",
+        "--include", "examples/echo-server/config.json",
         "--",
         "node",
-        "--experimental-specifier-resolution=node",
-        "./dist/server.js",
-        "--config", "./config/server.json",
-        "--log-level", "debug"
+        "examples/echo-server/server.js"
       ]
     }
   }

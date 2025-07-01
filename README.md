@@ -128,27 +128,28 @@ npx mcp-reloader --include "**/*.ts" -- node --experimental-specifier-resolution
 npx mcp-reloader cmd:python server.py --port 3000
 ```
 
-## MCP Client Configuration
+## Example: Wrapping Existing MCP Server
 
-Add to your `.mcp.json` or `claude_desktop_config.json`:
+Here's how to add hot-reload to any MCP server. This example wraps a simple echo server:
 
 ```json
 {
   "mcpServers": {
-    "custom-lsp": {
+    "echo-with-reload": {
       "command": "npx",
       "args": [
         "mcp-reloader",
-        "--include", "**/*.yaml",
+        "--include", "examples/echo-server/config.json",
         "--",
-        "python",
-        "my-lsp-server.py",
-        "--config", "server.yaml"
+        "node",
+        "examples/echo-server/server.js"
       ]
     }
   }
 }
 ```
+
+When `config.json` changes, the entire echo server restarts automatically.
 
 
 ## Command Line Arguments
