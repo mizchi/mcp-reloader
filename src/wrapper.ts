@@ -1,12 +1,8 @@
 #!/usr/bin/env node
 import { spawn, ChildProcess } from "child_process";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
-import chokidar from "chokidar";
+import chokidar, { FSWatcher } from "chokidar";
 import { parseArgs, buildCommand } from "./parse-args.js";
 import type { WrapperOptions } from './types.js';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 class ServerWrapper {
   private serverProcess: ChildProcess | null;
@@ -15,7 +11,7 @@ class ServerWrapper {
   private command: string;
   private commandArgs: string[];
   private isDirty: boolean;
-  private watchers: chokidar.FSWatcher[];
+  private watchers: FSWatcher[];
 
   constructor(options: WrapperOptions) {
     this.serverProcess = null;

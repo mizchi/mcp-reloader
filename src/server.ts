@@ -2,7 +2,7 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { ListToolsRequestSchema, CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import chokidar from "chokidar";
+import chokidar, { FSWatcher } from "chokidar";
 import { readdir } from "fs/promises";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -14,7 +14,7 @@ class HotReloadMCPServer {
   private server: Server;
   private tools: Map<string, Tool>;
   private toolsDir: string;
-  private watcher: chokidar.FSWatcher | null;
+  private watcher: FSWatcher | null;
   private isDirty: boolean;
   private includePatterns: string[];
 
