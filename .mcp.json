@@ -1,0 +1,40 @@
+{
+  "mcpServers": {
+    "hot-reload": {
+      "command": "node",
+      "args": [
+        "src/wrapper.js",
+        "--include", "config/**/*.json",
+        "--include", "src/lib/**/*.js"
+      ],
+      "env": {
+        "NODE_ENV": "development"
+      }
+    },
+    "hot-reload-custom": {
+      "command": "node",
+      "args": [
+        "src/wrapper.js",
+        "--include", "**/*.yaml",
+        "--",
+        "python",
+        "my-lsp-server.py",
+        "--port", "3000"
+      ]
+    },
+    "hot-reload-complex": {
+      "command": "node",
+      "args": [
+        "src/wrapper.js",
+        "--include", "config/**/*.{json,yaml}",
+        "--include", "src/**/*.ts",
+        "--",
+        "node",
+        "--experimental-specifier-resolution=node",
+        "./dist/server.js",
+        "--config", "./config/server.json",
+        "--log-level", "debug"
+      ]
+    }
+  }
+}

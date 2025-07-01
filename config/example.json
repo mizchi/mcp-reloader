@@ -1,0 +1,9 @@
+{
+  "apiKey": "test-api-key",
+  "baseUrl": "https://api.example.com",
+  "timeout": 5000,
+  "features": {
+    "enableCache": true,
+    "maxRetries": 3
+  }
+}

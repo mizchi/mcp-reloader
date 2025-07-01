@@ -1,0 +1,18 @@
+{
+  "name": "mcp-hot-reload",
+  "version": "1.0.0",
+  "description": "MCP server with hot reload capability",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "dev:wrapper": "node src/wrapper.js",
+    "dev:include": "MCP_HOT_RELOAD_INCLUDE='config/**/*.json,src/**/*.yaml' node src/wrapper.js",
+    "test": "node tests/test-client.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "chokidar": "^4.0.3",
+    "glob": "^11.0.3",
+    "minimatch": "^10.0.3"
+  }
+}
