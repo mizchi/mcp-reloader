@@ -1,20 +1,83 @@
 # MCP Reloader
 
-A hot-reload server implementation for Model Context Protocol (MCP) that enables dynamic tool loading and automatic process restart on configuration changes.
+A hot-reload development tool for building MCP (Model Context Protocol) servers with Claude Code. This tool enables Claude Code to dynamically reload MCP tools as they are modified, making it perfect for iterative development where Claude Code can write and test MCP tools in real-time.
 
 ## Overview
 
-MCP Reloader solves the common development pain point where MCP clients need to be restarted whenever server tools are modified. By implementing file watching and the `tools/list_changed` notification, it enables seamless tool updates during development.
+MCP Reloader is specifically designed for developers using Claude Code to build MCP tools. It solves the common development pain point where MCP clients need to be restarted whenever server tools are modified. By implementing file watching and the `tools/list_changed` notification, Claude Code can modify tools and immediately test them without manual restarts.
 
-## Features
+## Key Features for Claude Code Development
 
-- **Dynamic Tool Loading**: Automatically loads JavaScript tools from `src/tools/` directory
-- **Hot Reload**: Tools are reloaded without restarting the MCP client
+- **Real-time Tool Development**: Claude Code can write, modify, and test MCP tools without restarts
+- **Dynamic Tool Loading**: Automatically loads JavaScript tools from `tools/` directory
+- **Instant Feedback Loop**: Changes are reflected immediately in the MCP client
 - **File Watching**: Uses chokidar to detect file changes in real-time
-- **Include Patterns**: Watch arbitrary files with glob patterns and restart on changes
 - **Process Wrapping**: Wrap any LSP/MCP process with hot-reload capabilities
-- **Automatic Notifications**: Sends `tools/list_changed` notifications on tool updates
-- **Error Resilience**: Handles tool loading errors gracefully without crashing
+- **Auto-restart on Config Changes**: Watch configuration files and restart when needed
+
+## Quick Start with Claude Code
+
+### 1. Create a new MCP project
+
+```bash
+mkdir my-mcp-tools
+cd my-mcp-tools
+mkdir tools
+```
+
+### 2. Configure Claude Desktop
+
+Add to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "my-tools": {
+      "command": "npx",
+      "args": ["mcp-reloader"],
+      "cwd": "/path/to/my-mcp-tools"
+    }
+  }
+}
+```
+
+### 3. Ask Claude Code to create tools
+
+Now Claude Code can create and modify tools in the `tools/` directory, and they will be automatically available without restarting Claude Desktop!
+
+## Example: Claude Code Creating Tools
+
+Here's how Claude Code can create a tool that will be immediately available:
+
+```javascript
+// tools/search-files.js
+export default {
+  name: "search_files",
+  description: "Search for files matching a pattern",
+  inputSchema: {
+    type: "object",
+    properties: {
+      pattern: {
+        type: "string",
+        description: "Glob pattern to search for files"
+      },
+      directory: {
+        type: "string",
+        description: "Directory to search in",
+        default: "."
+      }
+    },
+    required: ["pattern"]
+  },
+  handler: async ({ pattern, directory = "." }) => {
+    const { glob } = await import('glob');
+    const files = await glob(pattern, { cwd: directory });
+    return `Found ${files.length} files:\n${files.join('\n')}`;
+  }
+};
+```
+
+Claude Code can create this file, and it will be immediately available to use!
 
 ## Installation
 
@@ -72,14 +135,6 @@ Add to your `.mcp.json` or `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "hot-reload": {
-      "command": "npx",
-      "args": [
-        "mcp-reloader",
-        "--include", "config/**/*.json",
-        "--include", "src/lib/**/*.js"
-      ]
-    },
     "custom-lsp": {
       "command": "npx",
       "args": [
@@ -95,33 +150,6 @@ Add to your `.mcp.json` or `claude_desktop_config.json`:
 }
 ```
 
-## Creating Tools
-
-Add new tools by creating JavaScript files in `src/tools/`:
-
-```javascript
-// src/tools/my-tool.js
-export default {
-  name: "my_tool",
-  description: "Description of my tool",
-  inputSchema: {
-    type: "object",
-    properties: {
-      param: { 
-        type: "string",
-        description: "Parameter description"
-      }
-    },
-    required: ["param"]
-  },
-  handler: async ({ param }) => {
-    // Tool implementation
-    return `Result: ${param}`;
-  }
-};
-```
-
-The tool will be automatically loaded and available to MCP clients without restart.
 
 ## Command Line Arguments
 
@@ -156,7 +184,7 @@ npx mcp-reloader -- python script.py --message "Hello World!" --path "/path with
 
 ### Two-Level Reload Strategy
 
-1. **Tool Files** (`src/tools/*.js`): Hot-reloaded without process restart
+1. **Tool Files** (`tools/*.js`): Hot-reloaded without process restart
    - File changes are detected by chokidar
    - Tools are dynamically imported with cache busting
    - `tools/list_changed` notification sent to clients
@@ -176,32 +204,32 @@ npx mcp-reloader -- python script.py --message "Hello World!" --path "/path with
                            │                      │
                            ▼                      ▼
                     File Watching           Tool Loading
-                    (--include)            (src/tools/*)
+                    (--include)            (tools/*.js)
 ```
 
 ## Expected Behavior
 
 ### Initial Startup
-- Server loads all tools from `src/tools/`
-- Initial tools like `echo` and `get_time` are available
+- Server loads all tools from `tools/`
+- Initial tools are immediately available
 - Client receives the tool list
 
 ### Adding a Tool
-- Create new file (e.g., `src/tools/hello.js`)
+- Create new file (e.g., `tools/hello.js`)
 - Server detects the new file
 - Tool is automatically loaded
 - `tools/list_changed` notification sent
 - Tool immediately available in client
 
 ### Modifying a Tool
-- Edit existing file (e.g., `src/tools/echo.js`)
+- Edit existing file (e.g., `tools/echo.js`)
 - Server detects the change
 - Tool is reloaded with new implementation
 - `tools/list_changed` notification sent
 - Updated behavior immediately available
 
 ### Deleting a Tool
-- Remove file (e.g., `src/tools/time.js`)
+- Remove file (e.g., `tools/time.js`)
 - Server detects the deletion
 - Tool is removed from available tools
 - `tools/list_changed` notification sent
@@ -255,4 +283,4 @@ MIT
 
 ## Acknowledgments
 
-This project implements the [Model Context Protocol](https://modelcontextprotocol.io) specification for tool hot-reloading.
+This project implements the [Model Context Protocol](https://modelcontextprotocol.io) specification for tool hot-reloading, specifically designed to enhance the Claude Code development experience.

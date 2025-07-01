@@ -17,7 +17,7 @@
     "dev": "tsx watch src/server.ts",
     "dev:wrapper": "tsx src/wrapper.ts",
     "dev:include": "MCP_HOT_RELOAD_INCLUDE='config/**/*.json,src/**/*.yaml' tsx src/wrapper.ts",
-    "test": "node tests/test-client.js",
+    "test": "npm run build && node test/basic.test.js",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
     "prepublishOnly": "npm run build"
