@@ -1,8 +1,8 @@
 #!/usr/bin/env node
+import chokidar from "chokidar";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import chokidar from "chokidar";
 import { readdir } from "fs/promises";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";

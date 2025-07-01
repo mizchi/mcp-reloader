@@ -4,7 +4,7 @@
   "description": "Hot-reload server for Model Context Protocol (MCP) with dynamic tool loading",
   "type": "module",
   "bin": {
-    "mcp-reloader": "./dist/wrapper.js"
+    "mcp-reloader": "./dist/cli.js"
   },
   "main": "./dist/server.js",
   "types": "./dist/server.d.ts",

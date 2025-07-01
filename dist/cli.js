@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-import { buildCommand, parseArgs } from "./parse-args-CR4sYHDY.js";
-import chokidar from "chokidar";
+import { buildCommand, parseArgs } from "./parse-args-BP2jijHm.js";
 import { spawn } from "child_process";
+import chokidar from "chokidar";
 
-//#region src/wrapper.ts
+//#region src/cli.ts
 var ServerWrapper = class {
 	serverProcess;
 	isRestarting;
@@ -118,4 +118,4 @@ wrapper.start();
 wrapper.startWatching();
 
 //#endregion
-//# sourceMappingURL=wrapper.js.map
+//# sourceMappingURL=cli.js.map

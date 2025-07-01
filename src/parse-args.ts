@@ -1,43 +1,55 @@
+import { parseArgs as nodeParseArgs } from 'node:util';
 import type { ParsedArgs } from './types.js';
 
 export function parseArgs(argv: string[]): ParsedArgs {
-  const args: ParsedArgs = {
+  const result: ParsedArgs = {
     includePatterns: [],
     command: null,
     commandArgs: [],
     rawArgs: []
   };
 
-  let i = 0;
-  while (i < argv.length) {
-    const arg = argv[i];
-    
-    if (arg === '--include') {
-      // Get the next argument as the include pattern
-      i++;
-      if (i < argv.length) {
-        args.includePatterns.push(argv[i]);
-      }
-    } else if (arg === '--') {
-      // Everything after -- is the command and its arguments
-      const remainingArgs = argv.slice(i + 1);
-      if (remainingArgs.length > 0) {
-        args.command = remainingArgs[0];
-        args.commandArgs = remainingArgs.slice(1);
-      }
-      break; // Stop processing after --
-    } else if (arg.startsWith('cmd:')) {
-      // Legacy support: Everything after cmd: is the command and its arguments
-      args.command = arg.slice(4); // Remove 'cmd:' prefix
-      args.commandArgs = argv.slice(i + 1);
-      break; // Stop processing after cmd:
-    } else {
-      args.rawArgs.push(arg);
-    }
-    i++;
+  // Legacy cmd: support - check first
+  const cmdIndex = argv.findIndex(arg => arg.startsWith('cmd:'));
+  if (cmdIndex !== -1) {
+    result.command = argv[cmdIndex].slice(4);
+    result.commandArgs = argv.slice(cmdIndex + 1);
+    return result;
   }
 
-  return args;
+  // Find -- separator
+  const dashIndex = argv.indexOf('--');
+  const argsToParseIndex = dashIndex === -1 ? argv.length : dashIndex;
+  const argsToParse = argv.slice(0, argsToParseIndex);
+  
+  // Parse with node:util parseArgs
+  const { values, positionals } = nodeParseArgs({
+    args: argsToParse,
+    options: {
+      include: {
+        type: 'string',
+        multiple: true,
+        default: []
+      }
+    },
+    strict: false,
+    allowPositionals: true
+  });
+
+  // Handle include patterns
+  if (values.include) {
+    result.includePatterns = Array.isArray(values.include) ? values.include : [values.include];
+  }
+
+  // Handle command after --
+  if (dashIndex !== -1 && dashIndex < argv.length - 1) {
+    result.command = argv[dashIndex + 1];
+    result.commandArgs = argv.slice(dashIndex + 2);
+  }
+
+  result.rawArgs = positionals;
+
+  return result;
 }
 
 export function buildCommand(parsedArgs: ParsedArgs): { command: string; args: string[] } {
