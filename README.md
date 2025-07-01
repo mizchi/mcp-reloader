@@ -1,108 +1,71 @@
-# MCP Hot Reload Server
+# MCP Reloader
 
-MCPサーバーのホットリロード機能を実装した検証プロジェクトです。
+A hot-reload server implementation for Model Context Protocol (MCP) that enables dynamic tool loading and automatic process restart on configuration changes.
 
-## 概要
+## Overview
 
-このプロジェクトは、MCPサーバー開発時の課題である「変更時にクライアントの再起動が必要」という問題を解決します。ファイル監視機能と`tools/list_changed`通知を使用して、ツールの動的な追加・変更・削除を可能にします。
+MCP Reloader solves the common development pain point where MCP clients need to be restarted whenever server tools are modified. By implementing file watching and the `tools/list_changed` notification, it enables seamless tool updates during development.
 
-## 機能
+## Features
 
-- **動的ツール読み込み**: `src/tools/`ディレクトリ内のJSファイルを自動的に読み込み
-- **ファイル監視**: chokidarを使用してツールファイルの変更を検知
-- **自動通知**: ツールの変更時に`tools/list_changed`通知を送信
-- **エラーハンドリング**: ツール読み込みエラーを適切に処理
-- **includeパターン**: 任意のファイルを監視し、変更時にプロセスを再起動
-- **カスタムコマンド**: 任意のLSPプロセスをホットリロード対応でラップ
+- **Dynamic Tool Loading**: Automatically loads JavaScript tools from `src/tools/` directory
+- **Hot Reload**: Tools are reloaded without restarting the MCP client
+- **File Watching**: Uses chokidar to detect file changes in real-time
+- **Include Patterns**: Watch arbitrary files with glob patterns and restart on changes
+- **Process Wrapping**: Wrap any LSP/MCP process with hot-reload capabilities
+- **Automatic Notifications**: Sends `tools/list_changed` notifications on tool updates
+- **Error Resilience**: Handles tool loading errors gracefully without crashing
 
-## セットアップ
+## Installation
 
 ```bash
-cd mcp-hot-reload
+git clone https://github.com/mizchi/mcp-reloader.git
+cd mcp-reloader
 npm install
 ```
 
-## 使用方法
+## Usage
 
-### 基本的なサーバーの起動
+### Basic Server Start
 
 ```bash
-# デフォルトのMCPサーバーを起動
+# Start with default MCP server
 npm run dev
 
-# ラッパー経由で起動（自動再起動対応）
+# Start with wrapper (supports auto-restart)
 npm run dev:wrapper
 ```
 
-### Includeパターンを使用した起動
+### Using Include Patterns
+
+Watch additional files and restart the process when they change:
 
 ```bash
-# 設定ファイルの変更を監視してプロセスを再起動
+# Watch configuration files
 node src/wrapper.js --include "config/**/*.json" --include "src/lib/**/*.js"
 
-# または環境変数で指定
+# Or use environment variable
 MCP_HOT_RELOAD_INCLUDE='config/**/*.json,src/lib/**/*.js' node src/wrapper.js
 ```
 
-### カスタムLSPサーバーのラップ
+### Wrapping Custom LSP Servers
+
+Wrap any LSP server with hot-reload capabilities:
 
 ```bash
-# Pythonで書かれたLSPサーバーをホットリロード対応でラップ
+# Wrap a Python LSP server
 node src/wrapper.js --include "**/*.yaml" -- python my-lsp-server.py --port 3000
 
-# Node.jsのLSPサーバーをラップ（複雑な引数付き）
-node src/wrapper.js --include "config.json" -- node --experimental-modules ./dist/lsp-server.js --debug
+# Wrap a Node.js server with complex arguments
+node src/wrapper.js --include "**/*.ts" -- node --experimental-specifier-resolution=node ./dist/server.js --config ./config.json
 
-# レガシーのcmd:形式もサポート
-node src/wrapper.js --include "config.json" cmd:node ./dist/lsp-server.js
+# Legacy cmd: format (still supported)
+node src/wrapper.js cmd:python server.py --port 3000
 ```
 
-### テストクライアントの実行
+## MCP Client Configuration
 
-```bash
-npm test
-```
-
-### 新しいツールの追加
-
-`src/tools/`ディレクトリに新しいJSファイルを作成：
-
-```javascript
-export default {
-  name: "my_tool",
-  description: "My custom tool",
-  inputSchema: {
-    type: "object",
-    properties: {
-      param: { type: "string" }
-    },
-    required: ["param"]
-  },
-  handler: async ({ param }) => {
-    return `Result: ${param}`;
-  }
-};
-```
-
-ファイルを保存すると、サーバーが自動的に新しいツールを読み込み、クライアントに通知します。
-
-## MCP仕様の実装
-
-### tools/list_changed通知
-
-[MCP仕様](https://modelcontextprotocol.io/specification/2025-03-26/server/tools#list-changed-notification)に従い、ツールリストが変更された際に通知を送信します：
-
-```javascript
-await this.server.notification({
-  method: "tools/list_changed"
-});
-```
-
-クライアントはこの通知を受け取ると、`tools/list`を再度呼び出してツールリストを更新できます。
-
-## Claude Desktopでの使用
-
-`.mcp.json`または`claude_desktop_config.json`に以下を追加：
+Add to your `.mcp.json` or `claude_desktop_config.json`:
 
 ```json
 {
@@ -110,7 +73,7 @@ await this.server.notification({
     "hot-reload": {
       "command": "node",
       "args": [
-        "/path/to/mcp-hot-reload/src/wrapper.js",
+        "/path/to/mcp-reloader/src/wrapper.js",
         "--include", "config/**/*.json",
         "--include", "src/lib/**/*.js"
       ]
@@ -118,7 +81,7 @@ await this.server.notification({
     "custom-lsp": {
       "command": "node",
       "args": [
-        "/path/to/mcp-hot-reload/src/wrapper.js",
+        "/path/to/mcp-reloader/src/wrapper.js",
         "--include", "**/*.yaml",
         "--",
         "python",
@@ -130,84 +93,154 @@ await this.server.notification({
 }
 ```
 
-## コマンドライン引数
+## Creating Tools
 
-### --include パターン
+Add new tools by creating JavaScript files in `src/tools/`:
 
-glob形式のファイルパターンを指定して、変更を監視します。マッチするファイルが変更されると、プロセス全体が再起動されます。
+```javascript
+// src/tools/my-tool.js
+export default {
+  name: "my_tool",
+  description: "Description of my tool",
+  inputSchema: {
+    type: "object",
+    properties: {
+      param: { 
+        type: "string",
+        description: "Parameter description"
+      }
+    },
+    required: ["param"]
+  },
+  handler: async ({ param }) => {
+    // Tool implementation
+    return `Result: ${param}`;
+  }
+};
+```
+
+The tool will be automatically loaded and available to MCP clients without restart.
+
+## Command Line Arguments
+
+### --include patterns
+
+Specify glob patterns for files to watch. When matched files change, the entire process restarts.
 
 ```bash
-# 単一パターン
+# Single pattern
 node src/wrapper.js --include "config.json"
 
-# 複数パターン
+# Multiple patterns
 node src/wrapper.js --include "**/*.yaml" --include "lib/**/*.js"
 ```
 
-### -- 区切り文字
+### -- separator
 
-`--`以降の引数は、実行するコマンドとその引数として解釈されます。これにより、複雑な引数を持つコマンドもエスケープなしで指定できます。
+Everything after `--` is treated as the command and its arguments. This makes it easy to pass complex arguments without escaping.
 
 ```bash
-# Pythonスクリプトを実行
+# Simple command
 node src/wrapper.js -- python server.py --port 3000
 
-# Node.jsで複雑な引数を持つスクリプトを実行
+# Complex Node.js arguments
 node src/wrapper.js --include "**/*.ts" -- node --experimental-specifier-resolution=node ./dist/server.js --config ./config.json
 
-# スペースや特殊文字を含む引数も簡単に渡せる
+# Arguments with spaces and special characters
 node src/wrapper.js -- python script.py --message "Hello World!" --path "/path with spaces/"
 ```
 
-### cmd: コマンド（レガシー）
+## How It Works
 
-後方互換性のため、`cmd:`形式も引き続きサポートされます。
+### Two-Level Reload Strategy
 
-```bash
-node src/wrapper.js cmd:python server.py --port 3000
+1. **Tool Files** (`src/tools/*.js`): Hot-reloaded without process restart
+   - File changes are detected by chokidar
+   - Tools are dynamically imported with cache busting
+   - `tools/list_changed` notification sent to clients
+   - MCP clients can immediately use updated tools
+
+2. **Include Pattern Files**: Full process restart
+   - Wrapper process monitors specified glob patterns
+   - On change, the entire server process is restarted
+   - Useful for configuration files or core dependencies
+
+### Architecture
+
+```
+┌─────────────┐     ┌─────────────┐     ┌──────────────┐
+│ MCP Client  │────▶│   Wrapper   │────▶│  MCP Server  │
+└─────────────┘     └─────────────┘     └──────────────┘
+                           │                      │
+                           ▼                      ▼
+                    File Watching           Tool Loading
+                    (--include)            (src/tools/*)
 ```
 
-## 期待される動作
+## Expected Behavior
 
-### 1. 初期起動時
-- サーバー起動時に`src/tools/`内の全ツールファイルを読み込む
-- 初期状態では`echo`と`get_time`の2つのツールが利用可能
-- テストクライアントで両ツールの動作を確認できる
+### Initial Startup
+- Server loads all tools from `src/tools/`
+- Initial tools like `echo` and `get_time` are available
+- Client receives the tool list
 
-### 2. ツールファイルの追加
-- 新規ファイル（例: `src/tools/hello.js`）を作成すると：
-  - サーバーがファイル追加を検知
-  - 新しいツールを自動的に読み込み
-  - `tools/list_changed`通知をクライアントに送信
-  - クライアントが通知を受け取り、ツールリストを更新
+### Adding a Tool
+- Create new file (e.g., `src/tools/hello.js`)
+- Server detects the new file
+- Tool is automatically loaded
+- `tools/list_changed` notification sent
+- Tool immediately available in client
 
-### 3. ツールファイルの変更
-- 既存ファイル（例: `src/tools/echo.js`）を編集すると：
-  - サーバーがファイル変更を検知
-  - ツールを再読み込み（ESモジュールキャッシュ回避）
-  - `tools/list_changed`通知をクライアントに送信
-  - 変更後のツールの動作が即座に反映される
+### Modifying a Tool
+- Edit existing file (e.g., `src/tools/echo.js`)
+- Server detects the change
+- Tool is reloaded with new implementation
+- `tools/list_changed` notification sent
+- Updated behavior immediately available
 
-### 4. ツールファイルの削除
-- ファイル（例: `src/tools/time.js`）を削除すると：
-  - サーバーがファイル削除を検知
-  - ツールリストから該当ツールを削除
-  - `tools/list_changed`通知をクライアントに送信
-  - 削除されたツールは呼び出し不可になる
+### Deleting a Tool
+- Remove file (e.g., `src/tools/time.js`)
+- Server detects the deletion
+- Tool is removed from available tools
+- `tools/list_changed` notification sent
+- Tool no longer callable
 
-### 5. エラーハンドリング
-- 不正なツールファイル（構文エラーなど）を追加しても：
-  - エラーをコンソールに表示
-  - 他のツールは正常に動作を継続
-  - サーバーはクラッシュしない
+### Include Pattern Changes
+- Modify watched file (e.g., `config.json`)
+- Wrapper detects the change
+- Entire server process restarts
+- All tools are reloaded with new configuration
 
-### 6. 通知の動作確認
-- テストクライアント実行中のコンソールで：
-  - `Received tools/list_changed notification (count: X)`が表示される
-  - 現在利用可能なツール一覧が更新される
+## Development
 
-## 注意事項
+```bash
+# Run tests
+npm test
 
-- ESモジュールのキャッシュを回避するため、動的importにタイムスタンプを付加
-- ツールの読み込みエラーは個別に処理され、他のツールには影響しない
-- 開発時は`--watch`フラグでサーバー自体もホットリロード可能
+# Run development server
+npm run dev
+
+# Test hot-reload functionality
+./test-include.sh
+```
+
+## Comparison with Similar Tools
+
+| Tool | Use Case | State Preservation | MCP Integration |
+|------|----------|-------------------|-----------------|
+| **mcp-reloader** | MCP/LSP servers | Two-level strategy | Native support |
+| **nodemon** | General purpose | No (full restart) | Manual setup |
+| **tsx watch** | TypeScript only | No (full restart) | No |
+| **Bun --hot** | Bun runtime | Yes | No |
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+MIT
+
+## Acknowledgments
+
+This project implements the [Model Context Protocol](https://modelcontextprotocol.io) specification for tool hot-reloading.
